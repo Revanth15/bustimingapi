@@ -4,7 +4,12 @@ import requests
 from datetime import datetime, timedelta, timezone
 # from . import db
 import json
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
+
+ACCOUNT_KEY = os.getenv('ACCOUNT_KEY')
 views = Blueprint('views', __name__)
 
 
@@ -34,7 +39,7 @@ def get_bustiming(busstopcode,busno):
             "BusNo": "969", 
             "estArrivalTime": "arriving (lastbus)"
             }
-        ]
+        ]   
     }
     data = {}
     list = []
@@ -44,7 +49,7 @@ def get_bustiming(busstopcode,busno):
     # print(buslist)
     url = f"http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}"
     headers = {
-    'AccountKey': '3YEUOxY6QbaW/pg5YbXQDg=='
+    'AccountKey': ACCOUNT_KEY
     }
     response = requests.request("GET", url, headers=headers)
     response = response.json()
@@ -73,7 +78,6 @@ def get_bustiming(busstopcode,busno):
         data['Services'] = list
     else:
         data = test
-        
     # response = requests.get('http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}}')
     # print(json.dumps(services,indent=1))
     print(data)
