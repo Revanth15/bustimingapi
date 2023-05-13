@@ -78,7 +78,7 @@ def get_bustiming(busstopcode,busno,options):
             else:
                 arrivaltime = "not operating right now"
             print(f"{i['ServiceNo']} : {arrivaltime} ")
-            list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime , 'options' : options})
+            list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime , 'options' : op})
         data['Services'] = list
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
