@@ -46,9 +46,6 @@ def get_bustiming(busstopcode,busno,options):
     data = {}
     list = []
     optionsList = options.split(',')
-    print(optionsList)
-    # print(busstopcode)
-    # if busno != 'null':
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
     if len(buslist) > 1:
@@ -138,7 +135,7 @@ def checkOptions(service,optionsList):
     #     if option == "False":
     #         print(option)
     for i in range(len(optionsList)):
-        if optionsList[i] == "True":
+        if optionsList[i].upper() == "YES" or optionsList[i].upper() == "TRUE":
             val = service['NextBus'][str(optionsDict[i])]
             # print(optionsDict[str(optionsDict[i])])
             opList.append(optionsDict[str(optionsDict[i])][val])
