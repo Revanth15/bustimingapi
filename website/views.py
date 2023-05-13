@@ -56,7 +56,27 @@ def get_bustiming(busstopcode,busno):
     response = requests.request("GET", url, headers=headers)
     response = response.json()
     services = response['Services']
-    if busno != 'test':
+    if busno == "null":
+        for i in services:
+            now = datetime.now(timezone.utc)
+            if i['NextBus']['EstimatedArrival'] != '':
+                arrivaltime = int((datetime.fromisoformat(i['NextBus']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
+                # nextbus = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
+                lastbus = ""
+                if i['NextBus2']['EstimatedArrival'] == '':
+                    lastbus = " (lastbus)"
+                if arrivaltime <= 0:
+                    arrivaltime = f"arriving{lastbus}"
+                elif arrivaltime == 1:
+                    arrivaltime = f'1 min{lastbus}'
+                else:
+                    arrivaltime = f"{arrivaltime} mins{lastbus}"
+            else:
+                arrivaltime = "not operating right now"
+            print(f"{i['ServiceNo']} : {arrivaltime} ")
+            list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime })
+        data['Services'] = list
+    elif busno != 'test':
         for i in services:
             if i['ServiceNo'] in buslist:
                 
