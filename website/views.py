@@ -12,8 +12,8 @@ load_dotenv()
 ACCOUNT_KEY = os.getenv('ACCOUNT_KEY')
 views = Blueprint('views', __name__)
 
-env_config = os.getenv("PROD_APP_SETTINGS", "config.DevelopmentConfig")
-views.config.from_object(env_config)
+# env_config = os.getenv("PROD_APP_SETTINGS", "config.DevelopmentConfig")
+# views.config.from_object(env_config)
 
 @views.route('/', methods=['GET', 'POST'])
 @login_required
