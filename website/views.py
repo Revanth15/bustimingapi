@@ -49,6 +49,8 @@ def get_bustiming(busstopcode,busno):
     # if busno != 'null':
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
+    if len(buslist) > 1:
+        buslist.remove('null')
     print(buslist)
     url = f"http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}"
     headers = {
@@ -77,7 +79,7 @@ def get_bustiming(busstopcode,busno):
             print(f"{i['ServiceNo']} : {arrivaltime} ")
             list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime })
         data['Services'] = list
-    elif busno != 'test' or buslist[0] == 'null':
+    elif busno != 'test' or buslist[0] != 'null':
         for i in services:
             if i['ServiceNo'] in buslist:
                 
