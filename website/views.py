@@ -46,9 +46,10 @@ def get_bustiming(busstopcode,busno):
     data = {}
     list = []
     # print(busstopcode)
-    if busno != 'null':
-        buslist = busno.split(',')
-    # print(buslist)
+    # if busno != 'null':
+    buslist = busno.split(',')
+    buslist = [i for i in buslist if i]
+    print(buslist)
     url = f"http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}"
     headers = {
     'AccountKey': ACCOUNT_KEY
@@ -56,7 +57,7 @@ def get_bustiming(busstopcode,busno):
     response = requests.request("GET", url, headers=headers)
     response = response.json()
     services = response['Services']
-    if busno == "null":
+    if busno == "null" or buslist[0] == 'null':
         for i in services:
             now = datetime.now(timezone.utc)
             if i['NextBus']['EstimatedArrival'] != '':
@@ -76,7 +77,7 @@ def get_bustiming(busstopcode,busno):
             print(f"{i['ServiceNo']} : {arrivaltime} ")
             list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime })
         data['Services'] = list
-    elif busno != 'test':
+    elif busno != 'test' or buslist[0] == 'null':
         for i in services:
             if i['ServiceNo'] in buslist:
                 
