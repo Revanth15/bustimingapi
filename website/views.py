@@ -1,3 +1,6 @@
+import threading
+import time
+import schedule
 from flask import Blueprint, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
 import requests
@@ -8,7 +11,8 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+scheduler_running = False
+deployed = False
 ACCOUNT_KEY = os.getenv('ACCOUNT_KEY')
 views = Blueprint('views', __name__)
 
@@ -23,35 +27,94 @@ def home():
 
     return render_template("home.html", user=current_user)
 
+def job():
+    print("Keeping server up and running!")
+
+def start_scheduler():
+    global scheduler_running
+    scheduler_running = True
+    schedule.every(5).seconds.do(job)
+
+    while scheduler_running:
+        schedule.run_pending()
+        time.sleep(1)
+
+def stop_scheduler():
+    global scheduler_running
+    scheduler_running = False
+
+if deployed:
+    @views.before_request
+    def before_request():
+
+        # Stop the scheduler when a request is received
+        if scheduler_running:
+            stop_scheduler()
+
+    @views.after_request
+    def after_request(response):
+
+        if not scheduler_running:
+            threading.Thread(target=start_scheduler).start()
+        return response
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
 def get_bustiming(busstopcode,busno,options):  
-
+    global deployed
     test = {
         "Services": [
             {
-            "BusNo": "858", 
-            "estArrivalTime": "3 mins"
-            }, 
+                "BusNo": "117",
+                "estArrivalTime": "8 mins",
+                "options": "Seats Available | WheelChair"
+            },
             {
-            "BusNo": "883", 
-            "estArrivalTime": "2 mins"
-            }, 
+                "BusNo": "169",
+                "estArrivalTime": "2 mins",
+                "options": "Seats Available | WheelChair"
+            },
             {
-            "BusNo": "969", 
-            "estArrivalTime": "arriving (lastbus)"
+                "BusNo": "858",
+                "estArrivalTime": "1 min",
+                "options": "Seats Available | WheelChair"
+            },
+            {
+                "BusNo": "883",
+                "estArrivalTime": "9 mins",
+                "options": "Seats Available | WheelChair"
+            },
+            {
+                "BusNo": "965",
+                "estArrivalTime": "1 min",
+                "options": "Seats Available | WheelChair"
+            },
+            {
+                "BusNo": "969",
+                "estArrivalTime": "arriving",
+                "options": "Seats Available | WheelChair"
             }
-        ]   
+        ]
     }
     data = {}
     list = []
     optionsList = options.split(',')
+
+    # identify host
+    host = request.host
+    # print(host)
+    if deployed == False:
+        if host.startswith('localhost') or host.startswith('127.0.0.1'):
+            print('Request from localhost')
+        else:
+            deployed = True
+            print('Using the server!')
+
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
     if len(buslist) > 1:
         if buslist[0] == 'null':
             buslist.remove('null')
-    print(buslist)
+    # print(buslist)
     url = f"http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}"
     headers = {
     'AccountKey': ACCOUNT_KEY
@@ -77,9 +140,10 @@ def get_bustiming(busstopcode,busno,options):
                     arrivaltime = f"{arrivaltime} mins{lastbus}"
             else:
                 arrivaltime = "not operating right now"
-            print(f"{i['ServiceNo']} : {arrivaltime} ")
+            # print(f"{i['ServiceNo']} : {arrivaltime} ")
             list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime , 'options' : op})
         data['Services'] = list
+        print(f"Data for all busses @ {busstopcode} sent")
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
             if i['ServiceNo'] in buslist:
@@ -100,14 +164,15 @@ def get_bustiming(busstopcode,busno,options):
                         arrivaltime = f"{arrivaltime} mins{lastbus}"
                 else:
                     arrivaltime = "not operating right now"
-                print(f"{i['ServiceNo']} : {arrivaltime} ")
+                # print(f"{i['ServiceNo']} : {arrivaltime} ")
                 list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime, 'options' : op})
         data['Services'] = list
+        print(f"Data for {buslist} @ {busstopcode} buss(es) sent")
     else:
         data = test
     # response = requests.get('http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}}')
     # print(json.dumps(services,indent=1))
-    print(data)
+    # print(data)
     return jsonify(data)
 
 def checkOptions(service,optionsList):
