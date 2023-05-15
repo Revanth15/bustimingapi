@@ -33,7 +33,7 @@ def job():
 def start_scheduler():
     global scheduler_running
     scheduler_running = True
-    schedule.every(5).minutes.do(job)
+    schedule.every(7).minutes.do(job)
 
     while scheduler_running:
         schedule.run_pending()
