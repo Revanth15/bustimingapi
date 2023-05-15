@@ -33,7 +33,7 @@ def job():
 def start_scheduler():
     global scheduler_running
     scheduler_running = True
-    schedule.every(5).seconds.do(job)
+    schedule.every(5).minutes.do(job)
 
     while scheduler_running:
         schedule.run_pending()
@@ -51,11 +51,14 @@ if deployed:
         if scheduler_running:
             stop_scheduler()
 
+        print("before")
+
     @views.after_request
     def after_request(response):
 
         if not scheduler_running:
             threading.Thread(target=start_scheduler).start()
+        print("response")
         return response
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
@@ -108,7 +111,7 @@ def get_bustiming(busstopcode,busno,options):
         else:
             deployed = True
             print('Using the server!')
-
+    print(deployed)
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
     if len(buslist) > 1:
