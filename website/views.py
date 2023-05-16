@@ -28,8 +28,9 @@ def home():
     return render_template("home.html", user=current_user)
 
 def job():
-    url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
-    response = requests.request("GET", url)
+    # url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
+    # response = requests.request("GET", url)
+    print("Hellow")
 
 def start_scheduler():
     global scheduler_running
