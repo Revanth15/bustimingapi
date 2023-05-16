@@ -27,43 +27,43 @@ def home():
 
     return render_template("home.html", user=current_user)
 
-def job():
-    # url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
-    # response = requests.request("GET", url)
-    print("Hellow")
+# def job():
+#     # url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
+#     # response = requests.request("GET", url)
+#     print("Hellow")
 
-def start_scheduler():
-    global scheduler_running
-    scheduler_running = True
-    schedule.every(8).minutes.do(job)
+# def start_scheduler():
+#     global scheduler_running
+#     scheduler_running = True
+#     schedule.every(8).minutes.do(job)
 
-    while scheduler_running:
-        schedule.run_pending()
-        time.sleep(1)
+#     while scheduler_running:
+#         schedule.run_pending()
+#         time.sleep(1)
 
-def stop_scheduler():
-    global scheduler_running
-    scheduler_running = False
+# def stop_scheduler():
+#     global scheduler_running
+#     scheduler_running = False
 
-@views.before_request
-def before_request():
-    global deployed
-    if deployed == True:
-        # Stop the scheduler when a request is received
-        if scheduler_running:
-            stop_scheduler()
-            print("Ending Scheduler") 
+# @views.before_request
+# def before_request():
+#     global deployed
+#     if deployed == True:
+#         # Stop the scheduler when a request is received
+#         if scheduler_running:
+#             stop_scheduler()
+#             print("Ending Scheduler") 
 
-@views.after_request
-def after_request(response):
-    global deployed
-    global scheduler_running
-    if deployed == True:
-        if not scheduler_running:
-            threading.Thread(target=start_scheduler).start()
-            print("Starting Scheduler")
-            print(scheduler_running)
-        return response
+# @views.after_request
+# def after_request(response):
+#     global deployed
+#     global scheduler_running
+#     if deployed == True:
+#         if not scheduler_running:
+#             threading.Thread(target=start_scheduler).start()
+#             print("Starting Scheduler")
+#             print(scheduler_running)
+#         return response
 
 # if deployed == True:
 #     print('yellow')
@@ -134,7 +134,7 @@ def get_bustiming(busstopcode,busno,options):
         else:
             deployed = True
             print('Using the server!')
-    print(deployed)
+    # print(deployed)
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
     if len(buslist) > 1:
@@ -246,3 +246,9 @@ def get_busstop(busstopcode):
     services = response['value']
     
     return jsonify(services)
+
+@views.route('/healthcheck', methods=['get'])
+def healthcheck():  
+
+    response = "Healthy"
+    return response
