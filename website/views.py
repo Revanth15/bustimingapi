@@ -43,7 +43,7 @@ def stop_scheduler():
     global scheduler_running
     scheduler_running = False
 
-if deployed:
+if deployed == True:
     print('yellow')
     @views.before_request
     def before_request():
