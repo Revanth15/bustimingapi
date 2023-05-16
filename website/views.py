@@ -43,6 +43,23 @@ def stop_scheduler():
     global scheduler_running
     scheduler_running = False
 
+@views.before_request
+def before_request():
+
+    # Stop the scheduler when a request is received
+    if scheduler_running:
+        stop_scheduler()
+
+    print("before")
+
+@views.after_request
+def after_request(response):
+
+    if not scheduler_running:
+        threading.Thread(target=start_scheduler).start()
+    print("response")
+    return response
+
 if deployed == True:
     print('yellow')
     @views.before_request
