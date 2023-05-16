@@ -33,7 +33,7 @@ def job():
 def start_scheduler():
     global scheduler_running
     scheduler_running = True
-    schedule.every(8).minutes.do(job)
+    schedule.every(1).minutes.do(job)
 
     while scheduler_running:
         schedule.run_pending()
@@ -45,39 +45,41 @@ def stop_scheduler():
 
 @views.before_request
 def before_request():
-
-    # Stop the scheduler when a request is received
-    if scheduler_running:
-        stop_scheduler()
-
-    print("before")
-
-@views.after_request
-def after_request(response):
-
-    if not scheduler_running:
-        threading.Thread(target=start_scheduler).start()
-    print("response")
-    return response
-
-if deployed == True:
-    print('yellow')
-    @views.before_request
-    def before_request():
-
+    global deployed
+    if deployed == True:
         # Stop the scheduler when a request is received
         if scheduler_running:
             stop_scheduler()
 
         print("before")
 
-    @views.after_request
-    def after_request(response):
-
+@views.after_request
+def after_request(response):
+    global deployed
+    if deployed == True:
         if not scheduler_running:
             threading.Thread(target=start_scheduler).start()
-        print("response")
+        print("after")
         return response
+
+# if deployed == True:
+#     print('yellow')
+#     @views.before_request
+#     def before_request():
+
+#         # Stop the scheduler when a request is received
+#         if scheduler_running:
+#             stop_scheduler()
+
+#         print("before")
+
+#     @views.after_request
+#     def after_request(response):
+
+#         if not scheduler_running:
+#             threading.Thread(target=start_scheduler).start()
+#         print("response")
+#         return response
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
 def get_bustiming(busstopcode,busno,options):  
