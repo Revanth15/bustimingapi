@@ -34,7 +34,7 @@ def job():
 def start_scheduler():
     global scheduler_running
     scheduler_running = True
-    schedule.every(1).minutes.do(job)
+    schedule.every(8).minutes.do(job)
 
     while scheduler_running:
         schedule.run_pending()
@@ -51,17 +51,16 @@ def before_request():
         # Stop the scheduler when a request is received
         if scheduler_running:
             stop_scheduler()
-            print("ending") 
+            print("Ending Scheduler") 
 
 @views.after_request
 def after_request(response):
     global deployed
     global scheduler_running
-    print(scheduler_running)
     if deployed == True:
         if not scheduler_running:
             threading.Thread(target=start_scheduler).start()
-            print("starting")
+            print("Starting Scheduler")
             print(scheduler_running)
         return response
 
