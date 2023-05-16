@@ -28,7 +28,8 @@ def home():
     return render_template("home.html", user=current_user)
 
 def job():
-    print("Keeping server up and running!")
+    url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
+    response = requests.request("GET", url)
 
 def start_scheduler():
     global scheduler_running
@@ -50,16 +51,18 @@ def before_request():
         # Stop the scheduler when a request is received
         if scheduler_running:
             stop_scheduler()
-
-        print("before")
+            print("ending") 
 
 @views.after_request
 def after_request(response):
     global deployed
+    global scheduler_running
+    print(scheduler_running)
     if deployed == True:
         if not scheduler_running:
             threading.Thread(target=start_scheduler).start()
-        print("after")
+            print("starting")
+            print(scheduler_running)
         return response
 
 # if deployed == True:
