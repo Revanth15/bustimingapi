@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from flask import Blueprint
-from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event
+from flask import Blueprint, jsonify
+from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -138,7 +138,7 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
         requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
         requested_buses_list.append(requested_bus)
         val += 1
-    # update_userDetails(user_id)
+    update_userDetails(user_id)
     try:
         # Add the request and requested buses to the session and commit the changes
         session.add_all(requested_buses_list)
@@ -152,3 +152,50 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
     
 if session.query(User).count() == 0:
     create_user("default","default@gmail.com","v1")
+
+@db.route('/requests_per_day_data', methods=['GET'])
+def requests_per_day():
+    result = session.query(func.date(Request.timestamp).label('date'), func.count(Request.id).label('count')).group_by(func.date(Request.timestamp)).all()
+
+    requests_data = []
+    for row in result:
+        request_date = row.date.strftime('%Y-%m-%d')
+        requests_count = row.count
+        requests_data.append({'date': request_date, 'count': requests_count})
+
+    return jsonify(requests_data)
+
+@db.route('/requests_per_hour_data', methods=['GET'])
+def get_requests_by_hour():
+    result = session.query(
+        func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00').label('hour'),
+        func.count(Request.id).label('count')
+    ).group_by('hour').order_by(func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00')).all()
+
+    data = [{'hour': row.hour, 'count': row.count} for row in result]
+
+    return jsonify(data)
+
+@db.route('/site_statistics_data')
+def get_statistics():
+    # Total requests
+    total_requests = session.query(func.count(Request.id)).scalar()
+
+    # Most requested bus stops
+    most_requested_stops = session.query(Request.bus_stop_code, func.count(Request.id)).\
+        filter(Request.bus_stop_code != 'All Busses').\
+        group_by(Request.bus_stop_code).\
+        order_by(func.count(Request.id).desc()).all()
+
+    # Bus numbers count
+    bus_numbers_count = session.query(RequestedBuses.bus_number, func.count(RequestedBuses.bus_number)).\
+        filter(RequestedBuses.bus_number != 'All Busses').\
+        group_by(RequestedBuses.bus_number).all()
+
+    data = {
+        'total_requests': total_requests,
+        'most_requested_stops': [{'bus_stop_code': stop_code, 'count': count} for stop_code, count in most_requested_stops],
+        'bus_numbers_count': [{'bus_number': bus_number, 'count': count} for bus_number, count in bus_numbers_count]
+    }
+
+    return jsonify(data)
