@@ -50,7 +50,7 @@ def get_bustiming(busstopcode,busno,options):
     if(request.headers.get('Details') is not None and request.headers.get('Email') is not None):
         user = get_userByNameandEmail(request.headers.get('Details'),request.headers.get('Email'))
         if user is None:
-            user = create_user(request.headers.get('Details'),request.headers.get('Email'))
+            user = create_user(request.headers.get('Details'),request.headers.get('Email'),request.headers.get('Version'))
     else:
         user = get_userById(1)
 

@@ -37,6 +37,7 @@ class User(Base):
     num_requests = Column(Integer, default=0)
     last_used = Column(DateTime)
     days_active = Column(Integer, default=0)
+    shortcut_version = Column(String(10))
     requests = relationship('Request', back_populates='user')
 
 class Request(Base):
@@ -96,9 +97,9 @@ def get_userById(id):
 def get_userByNameandEmail(name,email):
     return session.query(User).filter_by(username=name, email=email).first()
 
-def create_user(name, email):
+def create_user(name, email,version):
     try:
-        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), email=str(email))
+        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), email=str(email),shortcut_version=version)
 
         session.add(new_user)
         session.commit()
@@ -149,4 +150,4 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
         return False
     
 if session.query(User).count() == 0:
-    create_user("default","default@gmail.com")
+    create_user("default","default@gmail.com","v1")
