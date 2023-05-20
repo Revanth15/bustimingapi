@@ -7,7 +7,7 @@ import json
 import os
 from dotenv import load_dotenv
 
-from website.database import get_busstop
+from website.database import get_busstop, get_userById, get_userByNameandIp, create_user, update_userDetails, create_request
 
 load_dotenv()
 deployed = False
@@ -39,102 +39,52 @@ def get_bustiming(busstopcode,busno,options):
                 "BusNo": "169",
                 "estArrivalTime": "2 mins",
                 "options": "Seats Available | WheelChair"
-            },
-            {
-                "BusNo": "858",
-                "estArrivalTime": "1 min",
-                "options": "Seats Available | WheelChair"
-            },
-            {
-                "BusNo": "883",
-                "estArrivalTime": "9 mins",
-                "options": "Seats Available | WheelChair"
-            },
-            {
-                "BusNo": "965",
-                "estArrivalTime": "1 min",
-                "options": "Seats Available | WheelChair"
-            },
-            {
-                "BusNo": "969",
-                "estArrivalTime": "arriving",
-                "options": "Seats Available | WheelChair"
             }
         ],
         "stopName": "Yishun Stn"
     }
     data = {}
     list = []
+    user = None
     optionsList = options.split(',')
+    if(request.headers.get('Details') is not None and request.headers.get('IP') is not None):
+        user = get_userByNameandIp(request.headers.get('Details'),request.headers.get('IP'))
+        if user is None:
+            user = create_user(request.headers.get('Details'),request.headers.get('IP'))
+    else:
+        user = get_userById(1)
 
-    # identify host
-    host = request.host
-    # print(host)
+    print(user.username)
+    host = request.host  # identify host
     if deployed == False:
         if host.startswith('localhost') or host.startswith('127.0.0.1'):
             print('Request from localhost')
         else:
             deployed = True
             print('Using the server!')
-    # print(deployed)
     buslist = busno.split(',')
     buslist = [i for i in buslist if i]
     if len(buslist) > 1:
         if buslist[0] == 'null':
             buslist.remove('null')
-    # print(buslist)
     url = f"http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}"
     headers = {
     'AccountKey': ACCOUNT_KEY
     }
+    create_request(busstopcode,options,user.id,buslist)
     response = requests.request("GET", url, headers=headers)
     response = response.json()
     services = response['Services']
     if busno == "null" or buslist[0] == 'null':
         for i in services:
-            op = checkOptions(i,optionsList)
-            now = datetime.now(timezone.utc)
-            if i['NextBus']['EstimatedArrival'] != '':
-                arrivaltime = int((datetime.fromisoformat(i['NextBus']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
-                # nextbus = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
-                lastbus = ""
-                if i['NextBus2']['EstimatedArrival'] == '':
-                    lastbus = " (lastbus)"
-                if arrivaltime <= 0:
-                    arrivaltime = f"arriving{lastbus}"
-                elif arrivaltime == 1:
-                    arrivaltime = f'1 min{lastbus}'
-                else:
-                    arrivaltime = f"{arrivaltime} mins{lastbus}"
-            else:
-                arrivaltime = "not operating right now"
-            # print(f"{i['ServiceNo']} : {arrivaltime} ")
-            list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime , 'options' : op})
+            list.append(getArrivingTime(i, optionsList))
         data['Services'] = list
         data['stopName'] = get_busstop(str(busstopcode)).description
         print(f"Data for all busses @ {busstopcode} sent")
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
             if i['ServiceNo'] in buslist:
-                
-                op = checkOptions(i,optionsList)
-                now = datetime.now(timezone.utc)
-                if i['NextBus']['EstimatedArrival'] != '':
-                    arrivaltime = int((datetime.fromisoformat(i['NextBus']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
-                    # nextbus = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
-                    lastbus = ""
-                    if i['NextBus2']['EstimatedArrival'] == '':
-                        lastbus = " (lastbus)"
-                    if arrivaltime <= 0:
-                        arrivaltime = f"arriving{lastbus}"
-                    elif arrivaltime == 1:
-                        arrivaltime = f'1 min{lastbus}'
-                    else:
-                        arrivaltime = f"{arrivaltime} mins{lastbus}"
-                else:
-                    arrivaltime = "not operating right now"
-                # print(f"{i['ServiceNo']} : {arrivaltime} ")
-                list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime, 'options' : op})
+                list.append(getArrivingTime(i, optionsList))
         data['Services'] = list
         data['stopName'] = get_busstop(str(busstopcode)).description
         print(f"Data for {buslist} @ {busstopcode} buss(es) sent")
@@ -170,6 +120,26 @@ def checkOptions(service,optionsList):
             opList.append(optionsDict[str(optionsDict[i])][val])
             optionString = ' | '.join([str(x) for x in opList])
     return optionString
+
+def getArrivingTime(i, optionsList):
+    op = checkOptions(i,optionsList)
+    now = datetime.now(timezone.utc)
+    if i['NextBus']['EstimatedArrival'] != '':
+        arrivaltime = int((datetime.fromisoformat(i['NextBus']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
+        # nextbus = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
+        lastbus = ""
+        if i['NextBus2']['EstimatedArrival'] == '':
+            lastbus = " (lastbus)"
+        if arrivaltime <= 0:
+            arrivaltime = f"arriving{lastbus}"
+        elif arrivaltime == 1:
+            arrivaltime = f'1 min{lastbus}'
+        else:
+            arrivaltime = f"{arrivaltime} mins{lastbus}"
+    else:
+        arrivaltime = "not operating right now"
+    # print(f"{i['ServiceNo']} : {arrivaltime} ")
+    return {'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime, 'options' : op}
 
 @views.route('/healthcheck', methods=['get'])
 def healthcheck():  

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from flask import Blueprint
-from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float
+from sqlalchemy import false, false, false, false, Date, Date, Date, Date, DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -32,24 +32,31 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(250))
-    ip_address = Column(String(15))
-    num_requests = Column(Integer)
+    username = Column(String(50), nullable=False)
+    ip_address = Column(String(15), nullable=False)
+    num_requests = Column(Integer, default=0)
     last_used = Column(DateTime)
-    days_active = Column(Integer)
-    requests = relationship("Request", back_populates="user")
+    days_active = Column(Integer, default=0)
+    requests = relationship('Request', back_populates='user')
 
 class Request(Base):
     __tablename__ = 'requests'
 
     id = Column(Integer, primary_key=True)
-    bus_stop_code = Column(String(10))
-    bus_list = Column(String)
-    options = Column(String(250))
+    bus_stop_code = Column(String(10), nullable=False)
+    options = Column(String(250), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow() + timedelta(hours=8))
     user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship('User', back_populates='requests')
+    requested_busses = relationship('RequestedBuses', back_populates='request')
 
-    user = relationship("User", back_populates="requests")
+class RequestedBuses(Base):
+    __tablename__ = 'requested_buses'
+
+    id = Column(Integer, primary_key=True)
+    bus_number = Column(String(20), nullable=False)
+    request_id = Column(Integer, ForeignKey('requests.id'), nullable=False)
+    request = relationship('Request', back_populates='requested_busses')
 
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
@@ -83,3 +90,61 @@ def extractBusstops():
 
 def get_busstop(id):
     return session.query(BusStop).filter_by(id=id).first()
+
+def get_userById(id):
+    return session.query(User).filter_by(id=id).first()
+
+def get_userByNameandIp(name,ip):
+    return session.query(User).filter_by(username=name, ip_address=ip).first()
+
+def create_user(name, ip_address):
+    try:
+        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), ip_address=str(ip_address))
+
+        session.add(new_user)
+        session.commit()
+
+        return new_user
+    except Exception as e:
+        session.rollback()
+        print("Error creating user:", str(e))
+        return None
+
+def update_userDetails(id):
+    user = get_userById(id)
+    dt = (datetime.now() + timedelta(hours=8)).date()
+    if user.last_used:
+        if dt > user.last_used.date():
+            user.days_active += 1
+    else:
+        user.days_active += 1
+    user.num_requests += 1
+    user.last_used = datetime.utcnow() + timedelta(hours=8)
+    session.commit()
+
+def create_request(bus_stop_code, options, user_id, requested_buses):
+    try:
+        request = Request(id=session.query(func.count(Request.id)).scalar() + 1,bus_stop_code=bus_stop_code, options=options, timestamp=datetime.utcnow() + timedelta(hours=8), user_id=user_id)
+        session.add(request)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        print("Error creating request:", str(e))
+    requested_buses_list = []
+    val = 1
+    for bus in requested_buses:
+        if bus != "null":
+            requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
+            requested_buses_list.append(requested_bus)
+            val += 1
+    update_userDetails(user_id)
+    try:
+        # Add the request and requested buses to the session and commit the changes
+        session.add_all(requested_buses_list)
+        session.commit()
+        return True
+    except Exception as e:
+        # Handle any errors that occurred during the database operation
+        session.rollback()
+        print("Error creating requestedbusses:", str(e))
+        return False
