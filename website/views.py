@@ -1,6 +1,3 @@
-import threading
-import time
-import schedule
 from flask import Blueprint, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
 import requests
@@ -10,8 +7,9 @@ import json
 import os
 from dotenv import load_dotenv
 
+from website.database import get_busstop
+
 load_dotenv()
-scheduler_running = False
 deployed = False
 ACCOUNT_KEY = os.getenv('ACCOUNT_KEY')
 views = Blueprint('views', __name__)
@@ -26,63 +24,6 @@ def home():
         note = request.form.get('note')#Gets the note from the HTML 
 
     return render_template("home.html", user=current_user)
-
-# def job():
-#     # url = "https://timesaver-suam.onrender.com/bustiming/59079/null/True,True,False"
-#     # response = requests.request("GET", url)
-#     print("Hellow")
-
-# def start_scheduler():
-#     global scheduler_running
-#     scheduler_running = True
-#     schedule.every(8).minutes.do(job)
-
-#     while scheduler_running:
-#         schedule.run_pending()
-#         time.sleep(1)
-
-# def stop_scheduler():
-#     global scheduler_running
-#     scheduler_running = False
-
-# @views.before_request
-# def before_request():
-#     global deployed
-#     if deployed == True:
-#         # Stop the scheduler when a request is received
-#         if scheduler_running:
-#             stop_scheduler()
-#             print("Ending Scheduler") 
-
-# @views.after_request
-# def after_request(response):
-#     global deployed
-#     global scheduler_running
-#     if deployed == True:
-#         if not scheduler_running:
-#             threading.Thread(target=start_scheduler).start()
-#             print("Starting Scheduler")
-#             print(scheduler_running)
-#         return response
-
-# if deployed == True:
-#     print('yellow')
-#     @views.before_request
-#     def before_request():
-
-#         # Stop the scheduler when a request is received
-#         if scheduler_running:
-#             stop_scheduler()
-
-#         print("before")
-
-#     @views.after_request
-#     def after_request(response):
-
-#         if not scheduler_running:
-#             threading.Thread(target=start_scheduler).start()
-#         print("response")
-#         return response
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
 def get_bustiming(busstopcode,busno,options):  
@@ -119,7 +60,8 @@ def get_bustiming(busstopcode,busno,options):
                 "estArrivalTime": "arriving",
                 "options": "Seats Available | WheelChair"
             }
-        ]
+        ],
+        "stopName": "Yishun Stn"
     }
     data = {}
     list = []
@@ -169,6 +111,7 @@ def get_bustiming(busstopcode,busno,options):
             # print(f"{i['ServiceNo']} : {arrivaltime} ")
             list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime , 'options' : op})
         data['Services'] = list
+        data['stopName'] = get_busstop(str(busstopcode)).description
         print(f"Data for all busses @ {busstopcode} sent")
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
@@ -193,12 +136,10 @@ def get_bustiming(busstopcode,busno,options):
                 # print(f"{i['ServiceNo']} : {arrivaltime} ")
                 list.append({'BusNo': i['ServiceNo'], 'estArrivalTime' : arrivaltime, 'options' : op})
         data['Services'] = list
+        data['stopName'] = get_busstop(str(busstopcode)).description
         print(f"Data for {buslist} @ {busstopcode} buss(es) sent")
     else:
         data = test
-    # response = requests.get('http://datamall2.mytransport.sg/ltaodataservice/BusArrivalv2?BusStopCode={busstopcode}}')
-    # print(json.dumps(services,indent=1))
-    # print(data)
     return jsonify(data)
 
 def checkOptions(service,optionsList):
@@ -222,9 +163,6 @@ def checkOptions(service,optionsList):
     }
     optionString= ""
     opList = []
-    # for option in optionsList:
-    #     if option == "False":
-    #         print(option)
     for i in range(len(optionsList)):
         if optionsList[i].upper() == "YES" or optionsList[i].upper() == "TRUE":
             val = service['NextBus'][str(optionsDict[i])]
@@ -232,20 +170,6 @@ def checkOptions(service,optionsList):
             opList.append(optionsDict[str(optionsDict[i])][val])
             optionString = ' | '.join([str(x) for x in opList])
     return optionString
-
-@views.route('/busstop/<int:busstopcode>', methods=['get'])
-def get_busstop(busstopcode):  
-
-    url = f"http://datamall2.mytransport.sg/ltaodataservice/BusStops"
-    headers = {
-    'AccountKey': ACCOUNT_KEY
-    }
-    response = requests.request("GET", url, headers=headers)
-    response = response.json()
-    print(response)
-    services = response['value']
-    
-    return jsonify(services)
 
 @views.route('/healthcheck', methods=['get'])
 def healthcheck():  
