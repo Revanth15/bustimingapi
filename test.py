@@ -83,5 +83,4 @@
 from datetime import datetime, timedelta
 
 from website.database import get_userById
-
 print(datetime.utcnow() + timedelta(hours=8))

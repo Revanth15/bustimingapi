@@ -133,11 +133,12 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
     requested_buses_list = []
     val = 1
     for bus in requested_buses:
-        if bus != "null":
-            requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
-            requested_buses_list.append(requested_bus)
-            val += 1
-    update_userDetails(user_id)
+        if bus == "null":
+            bus = "All Busses"
+        requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
+        requested_buses_list.append(requested_bus)
+        val += 1
+    # update_userDetails(user_id)
     try:
         # Add the request and requested buses to the session and commit the changes
         session.add_all(requested_buses_list)
