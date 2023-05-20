@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from flask import Blueprint
-from sqlalchemy import false, false, false, false, Date, Date, Date, Date, DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func
+from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -33,7 +33,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     username = Column(String(50), nullable=False)
-    ip_address = Column(String(15), nullable=False)
+    email = Column(String(75))
     num_requests = Column(Integer, default=0)
     last_used = Column(DateTime)
     days_active = Column(Integer, default=0)
@@ -61,7 +61,6 @@ class RequestedBuses(Base):
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
-
 # session.close()
 
 db = Blueprint('db', __name__)
@@ -94,12 +93,12 @@ def get_busstop(id):
 def get_userById(id):
     return session.query(User).filter_by(id=id).first()
 
-def get_userByNameandIp(name,ip):
-    return session.query(User).filter_by(username=name, ip_address=ip).first()
+def get_userByNameandEmail(name,email):
+    return session.query(User).filter_by(username=name, email=email).first()
 
-def create_user(name, ip_address):
+def create_user(name, email):
     try:
-        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), ip_address=str(ip_address))
+        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), email=str(email))
 
         session.add(new_user)
         session.commit()
@@ -148,3 +147,6 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
         session.rollback()
         print("Error creating requestedbusses:", str(e))
         return False
+    
+if session.query(User).count() == 0:
+    create_user("default","default@gmail.com")

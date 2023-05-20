@@ -7,7 +7,7 @@ import json
 import os
 from dotenv import load_dotenv
 
-from website.database import get_busstop, get_userById, get_userByNameandIp, create_user, update_userDetails, create_request
+from website.database import get_busstop, get_userById, get_userByNameandEmail, create_user, update_userDetails, create_request
 
 load_dotenv()
 deployed = False
@@ -47,10 +47,10 @@ def get_bustiming(busstopcode,busno,options):
     list = []
     user = None
     optionsList = options.split(',')
-    if(request.headers.get('Details') is not None and request.headers.get('IP') is not None):
-        user = get_userByNameandIp(request.headers.get('Details'),request.headers.get('IP'))
+    if(request.headers.get('Details') is not None and request.headers.get('Email') is not None):
+        user = get_userByNameandEmail(request.headers.get('Details'),request.headers.get('Email'))
         if user is None:
-            user = create_user(request.headers.get('Details'),request.headers.get('IP'))
+            user = create_user(request.headers.get('Details'),request.headers.get('Email'))
     else:
         user = get_userById(1)
 
