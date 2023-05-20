@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from flask import Blueprint
-from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
 from sqlalchemy.orm import sessionmaker
@@ -25,6 +27,29 @@ class BusStop(Base):
     Latitude = Column(Float)
     Longitude = Column(Float)
     RoadName = Column(String(250))
+
+class User(Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(250))
+    ip_address = Column(String(15))
+    num_requests = Column(Integer)
+    last_used = Column(DateTime)
+    days_active = Column(Integer)
+    requests = relationship("Request", back_populates="user")
+
+class Request(Base):
+    __tablename__ = 'requests'
+
+    id = Column(Integer, primary_key=True)
+    bus_stop_code = Column(String(10))
+    bus_list = Column(String)
+    options = Column(String(250))
+    timestamp = Column(DateTime, default=datetime.utcnow() + timedelta(hours=8))
+    user_id = Column(Integer, ForeignKey('users.id'))
+
+    user = relationship("User", back_populates="requests")
 
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)

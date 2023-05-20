@@ -18,7 +18,7 @@ views = Blueprint('views', __name__)
 # views.config.from_object(env_config)
 
 @views.route('/', methods=['GET', 'POST'])
-@login_required
+# @login_required
 def home():
     if request.method == 'POST': 
         note = request.form.get('note')#Gets the note from the HTML 
