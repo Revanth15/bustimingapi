@@ -15,10 +15,10 @@ DB_CONNECTION_STRING = os.getenv('DB_CONNECTION_STRING')
 engine = create_engine(
     DB_CONNECTION_STRING,
     connect_args={
-        "ssl": {
-            "ssl_ca": "/etc/ssl/cert.pem" 
-                }
-    })
+        "ssl": {"ssl_ca": "/etc/ssl/cert.pem"},
+        'connect_timeout': 120
+    },
+    pool_timeout=20, pool_recycle=299)
 
 class BusStop(Base):
     __tablename__ = 'busstop'

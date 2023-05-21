@@ -23,7 +23,13 @@ def home():
     if request.method == 'POST': 
         note = request.form.get('note')#Gets the note from the HTML 
 
-    return render_template("home.html", user=current_user)
+    return render_template("home.html")
+
+@views.route('/dashboard', methods=['GET', 'POST'])
+# @login_required
+def dashboard():
+
+    return render_template("dashboard.html")
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
 def get_bustiming(busstopcode,busno,options):  

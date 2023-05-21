@@ -1,0 +1,129 @@
+:root {
+    --blue: #007bff;
+    --indigo: #674eec;
+    --purple: #8445f7;
+    --pink: #ff4169;
+    --red: #c4183c;
+    --orange: #fb7906;
+    --yellow: #ffb400;
+    --green: #17c671;
+    --teal: #1adba2;
+    --cyan: #00b8d8;
+    --white: #fff;
+    --gray: #868e96;
+    --gray-dark: #343a40;
+    --primary: #007bff;
+    --secondary: #5A6169;
+    --success: #17c671;
+    --info: #00b8d8;
+    --warning: #ffb400;
+    --danger: #c4183c;
+    --light: #FBFBFB;
+    --dark: #212529;
+    --breakpoint-xs: 0;
+    --breakpoint-sm: 576px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 992px;
+    --breakpoint-xl: 1200px;
+    --font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-family-monospace: "Roboto Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.stats-small {
+    min-height: 8.7rem;
+    overflow: hidden !important;
+}
+
+    .stats-small canvas {
+        position: absolute;
+        bottom: 0;
+    }
+
+.stats-small__data {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    flex-flow: column;
+    max-width: 50%;
+    z-index: 1;
+}
+
+.stats-small__label {
+    font-size: 0.625rem;
+    letter-spacing: 0.0625rem;
+    color: #818EA3;
+}
+
+.stats-small__value {
+    font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+.stats-small__percentage {
+    position: relative;
+    display: table;
+    margin-left: auto;
+    padding-left: 0.9375rem;
+}
+
+.stats-small__percentage--increase, .stats-small__percentage--decrease {
+    font-size: 0.75rem;
+}
+
+    .stats-small__percentage--increase::before, .stats-small__percentage--decrease::before {
+        content: "";
+        width: 0.75rem;
+        height: 0.375rem;
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background-position: center center;
+        background-repeat: no-repeat;
+    }
+
+.stats-small__percentage--increase {
+    color: #17c671;
+}
+
+    .stats-small__percentage--increase::before {
+        background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMTdjNjcxIiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gPHBhdGggZD0iTTcgMTRsNS01IDUgNXoiLz4gPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPiA8L3N2Zz4=);
+    }
+
+.stats-small__percentage--decrease {
+    color: #c4183c;
+}
+
+    .stats-small__percentage--decrease::before {
+        background-image: url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjYzQxODNjIiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTcgMTBsNSA1IDUtNXoiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==);
+    }
+
+.stats-small--1 .stats-small__data {
+    max-width: 100%;
+}
+
+.stats-small--1 .stats-small__percentage {
+    margin: 0 auto;
+}
+
+.stats-small--1 .stats-small__value {
+    font-size: 2.0625rem;
+}
+
+.stats-small--1 .stats-small__label {
+    font-size: 0.75rem;
+}
+
+.stats-small--1 .stats-small__percentage {
+    font-size: 0.75rem;
+}
+
+.stats-small--1 canvas {
+    opacity: 0.5;
+}
+
+.card-group .stats-small {
+    position: relative;
+    overflow: hidden;
+}
