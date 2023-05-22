@@ -7,7 +7,7 @@ import json
 import os
 from dotenv import load_dotenv
 
-from website.database import get_busstop, get_userById, get_userByNameandEmail, create_user, update_userDetails, create_request
+from website.database import get_busstop, get_note_message, get_userById, get_userByNameandEmail, create_user, update_userDetails, create_request
 
 load_dotenv()
 deployed = False
@@ -25,11 +25,11 @@ def home():
 
     return render_template("home.html")
 
-@views.route('/dashboard', methods=['GET', 'POST'])
-# @login_required
-def dashboard():
+# @views.route('/dashboard', methods=['GET', 'POST'])
+# # @login_required
+# def dashboard():
 
-    return render_template("dashboard.html")
+#     return render_template("dashboard.html")
 
 @views.route('/bustiming/<int:busstopcode>/<string:busno>/<string:options>', methods=['get'])
 def get_bustiming(busstopcode,busno,options):  
@@ -47,7 +47,8 @@ def get_bustiming(busstopcode,busno,options):
                 "options": "Seats Available | WheelChair"
             }
         ],
-        "stopName": "Yishun Stn"
+        "stopName": "Yishun Stn",
+        "extra": ""
     }
     data = {}
     list = []
@@ -57,6 +58,10 @@ def get_bustiming(busstopcode,busno,options):
         user = get_userByNameandEmail(request.headers.get('Details'),request.headers.get('Email'))
         if user is None:
             user = create_user(request.headers.get('Details'),request.headers.get('Email'),request.headers.get('Version'))
+    elif request.headers.get('Details') is not None:
+        user = get_userByNameandEmail(request.headers.get('Details'),"defaultuser@gmail.com")
+        if user is None:
+            user = create_user(request.headers.get('Details'),"defaultuser@gmail.com",request.headers.get('Version'))
     else:
         user = get_userById(1)
 
@@ -86,6 +91,11 @@ def get_bustiming(busstopcode,busno,options):
             list.append(getArrivingTime(i, optionsList))
         data['Services'] = list
         data['stopName'] = get_busstop(str(busstopcode)).description
+        note = get_note_message()
+        if note is not None:
+            data['extra'] = note
+        else:
+            data['extra'] = ""
         print(f"Data for all busses @ {busstopcode} sent")
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
@@ -93,6 +103,11 @@ def get_bustiming(busstopcode,busno,options):
                 list.append(getArrivingTime(i, optionsList))
         data['Services'] = list
         data['stopName'] = get_busstop(str(busstopcode)).description
+        note = get_note_message()
+        if note is not None:
+            data['extra'] = note
+        else:
+            data['extra'] = ""
         print(f"Data for {buslist} @ {busstopcode} buss(es) sent")
     else:
         data = test

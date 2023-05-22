@@ -27,7 +27,7 @@
 //   })();
 
 
-var getrequestperdaydata = $.get('/requests_per_day_data')
+var getrequestperdaydata = $.get('/admin/requests_per_day_data')
 var ctxreqPerDay = document.getElementById("requestsPerDay").getContext('2d');
 var count = []
 var dates = []
@@ -84,7 +84,7 @@ getrequestperdaydata.done(function (data) {
 })
 
 function hourschart(){
-    var getrequestperhourdata = $.get('/requests_per_hour_data')
+    var getrequestperhourdata = $.get('/admin/requests_per_hour_data')
     var ctxreqPerHour = document.getElementById("requestsPerHour").getContext('2d');
     var count = []
     var hour = []
@@ -142,12 +142,12 @@ function hourschart(){
 }
 
 function getStatistics(){
-    var getsitestatistics = $.get('/site_statistics_data')
+    var getsitestatistics = $.get('/admin/site_statistics_data')
     getsitestatistics.done(function (data) {
        
         console.log(data["total_requests"])
-        $(".total_requests").text(data["total_requests"])
+        $("#customers").text(data["total_requests"])
     })
 }
-setTimeout(hourschart,100)
-setTimeout(getStatistics,200)
+setTimeout(hourschart,500)
+setTimeout(getStatistics,1000)

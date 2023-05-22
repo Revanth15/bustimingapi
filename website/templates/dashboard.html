@@ -1,70 +1,58 @@
 {% extends "base.html" %} {% block title %}Dashboard{% endblock %} 
 {% block content%}
 <link rel="stylesheet" href="../static/css/dashboard.css" />
-<div class="row">
-    <div class="col-lg col-md-3 col-sm-6 mb-4">
-        <div class="stats-small stats-small--1 card card-small">
-        <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-            <div class="stats-small__data text-center">
-                <span class="stats-small__label text-uppercase">Total Requests</span>
-                <h6 class="stats-small__value total_requests my-3">0</h6>
+<div class="row p-2">
+    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        <a class="dashboard-stat red" href="#">
+            <div class="visual">
+                <i class='bx bx-credit-card'></i>
             </div>
-            <div class="stats-small__data">
-                <span class="stats-small__percentage stats-small__percentage--increase">4.7%</span>
+            <div class="details">
+                <div class="number">
+                    <span id="sales">$0</span>
+                </div>
+                <div class="desc">Total Sales</div>
             </div>
-            </div>
-            <canvas height="120" class="blog-overview-stats-small-1"></canvas>
-        </div>
-        </div>
+        </a>
     </div>
-    <div class="col-lg col-md-3 col-sm-6 mb-4">
-        <div class="stats-small stats-small--1 card card-small">
-        <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-            <div class="stats-small__data text-center">
-                <span class="stats-small__label text-uppercase">Orders</span>
-                <h6 class="stats-small__value count my-3">8</h6>
+    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        <a class="dashboard-stat hoki" href="#">
+            <div class="visual">
+                <i class='bx bx-dollar'></i>
             </div>
-            <div class="stats-small__data">
-                <span class="stats-small__percentage stats-small__percentage--increase">12.4%</span>
+            <div class="details">
+                <div class="number">
+                    <span id="revenue">$0</span>
+                </div>
+                <div class="desc">Total Revenue</div>
             </div>
-            </div>
-            <canvas height="120" class="blog-overview-stats-small-2"></canvas>
-        </div>
-        </div>
+        </a>
     </div>
-    <div class="col-lg col-md-3 col-sm-6 mb-4">
-        <div class="stats-small stats-small--1 card card-small">
-        <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-            <div class="stats-small__data text-center">
-                <span class="stats-small__label text-uppercase">Users</span>
-                <h6 class="stats-small__value count my-3">10</h6>
+    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        <a class="dashboard-stat blue" href="#">
+            <div class="visual">
+                <i class='bx bx-package'></i>
             </div>
-            <div class="stats-small__data">
-                <span class="stats-small__percentage stats-small__percentage--increase">12.4%</span>
+            <div class="details">
+                <div class="number">
+                    <span id="orders">0</span>
+                </div>
+                <div class="desc">Total Orders</div>
             </div>
-            </div>
-            <canvas height="120" class="blog-overview-stats-small-4"></canvas>
-        </div>
-        </div>
+        </a>
     </div>
-    <div class="col-lg col-md-3 col-sm-6 mb-4">
-        <div class="stats-small stats-small--1 card card-small">
-        <div class="card-body p-0 d-flex">
-            <div class="d-flex flex-column m-auto">
-            <div class="stats-small__data text-center">
-                <span class="stats-small__label text-uppercase">Subscribers</span>
-                <h6 class="stats-small__value count my-3">8</h6>
+    <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        <a class="dashboard-stat purple" href="#">
+            <div class="visual">
+                <i class='bx bxs-user'></i>
             </div>
-            <div class="stats-small__data">
-                <span class="stats-small__percentage stats-small__percentage--decrease">2.4%</span>
+            <div class="details">
+                <div class="number">
+                    <span id="customers">0</span>
+                </div>
+                <div class="desc">Customers</div>
             </div>
-            </div>
-            <canvas height="120" class="blog-overview-stats-small-5"></canvas>
-        </div>
-        </div>
+        </a>
     </div>
 </div>
 <div class="row">

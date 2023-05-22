@@ -59,6 +59,16 @@ class RequestedBuses(Base):
     request_id = Column(Integer, ForeignKey('requests.id'), nullable=False)
     request = relationship('Request', back_populates='requested_busses')
 
+class Note(Base):
+    __tablename__ = 'notes'
+
+    id = Column(Integer, primary_key=True)
+    message = Column(String(500))
+    status = Column(String(50), default="Inactive")
+    starttime = Column(DateTime)
+    endtime = Column(DateTime)
+    usedCount = Column(Integer, default=0)
+
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -112,7 +122,7 @@ def create_user(name, email,version):
 
 def update_userDetails(id):
     user = get_userById(id)
-    dt = (datetime.now() + timedelta(hours=8)).date()
+    dt = datetime.now().date()
     if user.last_used:
         if dt > user.last_used.date():
             user.days_active += 1
@@ -153,8 +163,72 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
 if session.query(User).count() == 0:
     create_user("default","default@gmail.com","v1")
 
-@db.route('/requests_per_day_data', methods=['GET'])
-def requests_per_day():
+def get_all_notes():
+    notes = session.query(Note).all()
+    return notes
+
+
+def defcreate_note(message, starttime, endtime):
+    note = Note(id=session.query(func.count(Note.id)).scalar() + 1, message=message, starttime=starttime, endtime=endtime)
+    session.add(note)
+    session.commit()
+
+def get_note(note_id):
+    return session.query(Note).get(note_id)
+
+
+def defupdate_note(note_id, message=None, starttime=None, endtime=None):
+    note = session.query(Note).get(note_id)
+    if note is None:
+        return False
+
+    if message:
+        note.message = message
+    if starttime:
+        note.starttime = starttime
+    if endtime:
+        note.endtime = endtime
+
+    session.commit()
+    return True
+
+
+def defdelete_note(note_id):
+    note = session.query(Note).get(note_id)
+    if note is None:
+        return False
+
+    session.delete(note)
+    session.commit()
+    return True
+
+def increment_used_count(note_id):
+    note = session.query(Note).get(note_id)
+    if note is None:
+        return False
+
+    note.usedCount += 1
+    session.commit()
+    return True
+
+def get_note_message():
+    current_time = datetime.now()
+
+    notes = get_all_notes()
+    for note in notes:
+        if note.starttime <= current_time <= note.endtime:
+            if note.status == "Inactive" or note.status == "Ongoing":
+                if current_time > note.endtime:
+                    note.status = "Finished"
+                elif note.status == "Inactive":
+                    note.status = "Ongoing"
+                session.commit()
+                increment_used_count(note.id)
+                return note.message
+    
+    return None
+
+def requests_per_day_data():
     result = session.query(func.date(Request.timestamp).label('date'), func.count(Request.id).label('count')).group_by(func.date(Request.timestamp)).all()
 
     requests_data = []
@@ -165,8 +239,7 @@ def requests_per_day():
 
     return jsonify(requests_data)
 
-@db.route('/requests_per_hour_data', methods=['GET'])
-def get_requests_by_hour():
+def get_requests_by_hour_data():
     result = session.query(
         func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00').label('hour'),
         func.count(Request.id).label('count')
@@ -176,8 +249,8 @@ def get_requests_by_hour():
 
     return jsonify(data)
 
-@db.route('/site_statistics_data')
-def get_statistics():
+
+def get_statistics_data():
     # Total requests
     total_requests = session.query(func.count(Request.id)).scalar()
 
