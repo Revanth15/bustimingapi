@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify
 from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event, text
@@ -212,12 +212,12 @@ def increment_used_count(note_id):
     return True
 
 def get_note_message():
-    current_time = datetime.now().replace(tzinfo=UTC)
+    current_time = datetime.now().astimezone(timezone.utc)
 
     notes = get_all_notes()
     for note in notes:
-        note_start = note.starttime.replace(tzinfo=UTC)
-        note_end = note.endtime.replace(tzinfo=UTC)
+        note_start = note.starttime.astimezone(timezone.utc)
+        note_end = note.endtime.astimezone(timezone.utc)
         print(note.starttime, current_time, note.endtime)
         print(note_start, current_time, note_end)
         if note_start <= current_time <= note_end:
