@@ -212,18 +212,23 @@ def increment_used_count(note_id):
     return True
 
 def get_note_message():
-    current_time = (datetime.strptime(datetime.now(), "%Y-%m-%dT%H:%M")).strftime("%Y-%m-%d %H:%M:%S")
+    current_time = datetime.now()
 
     notes = get_all_notes()
     for note in notes:
+        print(note.starttime, current_time, note.endtime)
         if note.starttime <= current_time <= note.endtime:
+            print("true")
             if note.status == "Inactive" or note.status == "Ongoing":
-                if current_time > note.endtime:
-                    note.status = "Finished"
-                elif note.status == "Inactive":
+                print("true1")
+                # if current_time > note.endtime:
+                #     print("true2")
+                #     note.status = "Finished"
+                if note.status == "Inactive":
+                    print("true3")
                     note.status = "Ongoing"
-                session.commit()
                 increment_used_count(note.id)
+                session.commit()
                 return note.message
     
     return None
