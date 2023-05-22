@@ -147,14 +147,22 @@ def getArrivingTime(i, optionsList):
     now = datetime.now(timezone.utc)
     if i['NextBus']['EstimatedArrival'] != '':
         arrivaltime = int((datetime.fromisoformat(i['NextBus']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
+        nextBus = arrivaltime = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
         # nextbus = int((datetime.fromisoformat(i['NextBus2']['EstimatedArrival']).replace(tzinfo=timezone(timedelta(hours=8))) - now).total_seconds() // 60)
         lastbus = ""
         if i['NextBus2']['EstimatedArrival'] == '':
             lastbus = " (lastbus)"
         if arrivaltime <= 0:
-            arrivaltime = f"arriving{lastbus}"
+            if lastbus != "":
+                arrivaltime = f"arriving{lastbus}"
+            else:
+                arrivaltime = f"arriving, {nextBus}"
         elif arrivaltime == 1:
-            arrivaltime = f'1 min{lastbus}'
+            if lastbus != "":
+                arrivaltime = f'1 min{lastbus}'
+            else:
+                arrivaltime = f"1 min, {nextBus}"
+            # arrivaltime = f'1 min{lastbus}'
         else:
             arrivaltime = f"{arrivaltime} mins{lastbus}"
     else:

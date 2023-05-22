@@ -212,7 +212,7 @@ def increment_used_count(note_id):
     return True
 
 def get_note_message():
-    current_time = datetime.now()
+    current_time = (datetime.strptime(datetime.now(), "%Y-%m-%dT%H:%M")).strftime("%Y-%m-%d %H:%M:%S")
 
     notes = get_all_notes()
     for note in notes:
