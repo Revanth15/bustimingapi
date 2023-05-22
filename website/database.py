@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify
 from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event, text
@@ -122,7 +122,7 @@ def create_user(name, email,version):
 
 def update_userDetails(id):
     user = get_userById(id)
-    dt = datetime.now().date()
+    dt = datetime.now(timezone.utc).date()
     if user.last_used:
         if dt > user.last_used.date():
             user.days_active += 1
@@ -212,7 +212,7 @@ def increment_used_count(note_id):
     return True
 
 def get_note_message():
-    current_time = datetime.now()
+    current_time = datetime.now(timezone.utc)
 
     notes = get_all_notes()
     for note in notes:
