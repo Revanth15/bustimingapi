@@ -48,7 +48,7 @@ def get_bustiming(busstopcode,busno,options):
             }
         ],
         "stopName": "Yishun Stn",
-        "extra": ""
+        "note": ""
     }
     data = {}
     list = []
@@ -93,9 +93,9 @@ def get_bustiming(busstopcode,busno,options):
         data['stopName'] = get_busstop(str(busstopcode)).description
         note = get_note_message()
         if note is not None:
-            data['extra'] = note
+            data['note'] = note
         else:
-            data['extra'] = ""
+            data['note'] = ""
         print(f"Data for all busses @ {busstopcode} sent")
     elif busno != 'test' or buslist[0] != 'null':
         for i in services:
@@ -105,9 +105,9 @@ def get_bustiming(busstopcode,busno,options):
         data['stopName'] = get_busstop(str(busstopcode)).description
         note = get_note_message()
         if note is not None:
-            data['extra'] = note
+            data['note'] = note
         else:
-            data['extra'] = ""
+            data['note'] = ""
         print(f"Data for {buslist} @ {busstopcode} buss(es) sent")
     else:
         data = test
