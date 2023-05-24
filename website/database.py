@@ -1,24 +1,37 @@
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify
-from sqlalchemy import DateTime, ForeignKey, create_engine, Column, Integer, String, Float, func, event, text
+from sqlalchemy import DateTime, ForeignKey, QueuePool, create_engine, Column, Integer, String, Float, desc, func, event, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker,joinedload
 
 from website.reusables import queryAPI
 
 Base = declarative_base()
 load_dotenv()
 DB_CONNECTION_STRING = os.getenv('DB_CONNECTION_STRING')
-engine = create_engine(
-    DB_CONNECTION_STRING,
-    connect_args={
-        "ssl": {"ssl_ca": "/etc/ssl/cert.pem"},
-        'connect_timeout': 120
-    },
-    pool_timeout=20, pool_recycle=299)
+
+def engine_creation():
+    engine = create_engine(
+        DB_CONNECTION_STRING,
+        connect_args={
+            "ssl": {"ssl_ca": "/etc/ssl/cert.pem"},
+            'connect_timeout': 120
+        },
+        poolclass=QueuePool,
+        pool_size=100,  # Adjust the pool size as per your requirements
+        pool_recycle=600,  # Recycle connections after 10min (adjust as needed)
+        pool_pre_ping=True
+    )
+    return engine
+
+def generate_session():
+    engine = engine_creation()
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    return session
 
 class BusStop(Base):
     __tablename__ = 'busstop'
@@ -69,14 +82,15 @@ class Note(Base):
     endtime = Column(DateTime)
     usedCount = Column(Integer, default=0)
 
+engine = engine_creation()
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
-# session.close()
 
 db = Blueprint('db', __name__)
 @db.route('/extractbusstops', methods=['get'])
 def extractBusstops():  
+    session = generate_session()
     counter = 0
     dataList = []
     flatten = lambda l: [y for x in l for y in x]
@@ -96,20 +110,31 @@ def extractBusstops():
         session.commit()
     else:
         dataList = ["Stops already extracted"]
+    session.close()
     return dataList
 
 def get_busstop(id):
-    return session.query(BusStop).filter_by(id=id).first()
+    session = generate_session()
+    busstop = session.query(BusStop).filter_by(id=id).first()
+    session.close()
+    return busstop
 
 def get_userById(id):
-    return session.query(User).filter_by(id=id).first()
+    session = generate_session()
+    user = session.query(User).filter_by(id=id).first()
+    session.close()
+    return user
 
 def get_userByNameandEmail(name,email):
-    return session.query(User).filter_by(username=name, email=email).first()
+    session = generate_session()
+    user = session.query(User).filter_by(username=name, email=email).first()
+    session.close()
+    return user
 
-def create_user(name, email,version):
+def create_user(name, email, version):
+    session = generate_session()
     try:
-        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), email=str(email),shortcut_version=version)
+        new_user = User(id=session.query(func.count(User.id)).scalar() + 1, username=str(name), email=str(email), shortcut_version=version)
 
         session.add(new_user)
         session.commit()
@@ -119,8 +144,17 @@ def create_user(name, email,version):
         session.rollback()
         print("Error creating user:", str(e))
         return None
+    finally:
+        session.close()
+
+if session.query(User).count() == 0:
+    create_user("default","default@gmail.com","v1")
+
+
+session.close()
 
 def update_userDetails(id):
+    session = generate_session()
     user = get_userById(id)
     dt = datetime.now(timezone.utc).date()
     if user.last_used:
@@ -131,55 +165,63 @@ def update_userDetails(id):
     user.num_requests += 1
     user.last_used = datetime.utcnow() + timedelta(hours=8)
     session.commit()
+    session.close()
 
 def create_request(bus_stop_code, options, user_id, requested_buses):
+    session = generate_session()
     try:
-        request = Request(id=session.query(func.count(Request.id)).scalar() + 1,bus_stop_code=bus_stop_code, options=options, timestamp=datetime.utcnow() + timedelta(hours=8), user_id=user_id)
+        request = Request(id=session.query(func.count(Request.id)).scalar() + 1, bus_stop_code=bus_stop_code, options=options, timestamp=datetime.utcnow() + timedelta(hours=8), user_id=user_id)
         session.add(request)
         session.commit()
     except Exception as e:
         session.rollback()
         print("Error creating request:", str(e))
+        return False
+
     requested_buses_list = []
     val = 1
     for bus in requested_buses:
         if bus == "null":
-            bus = "All Busses"
+            bus = "All Buses"
         requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
         requested_buses_list.append(requested_bus)
         val += 1
     update_userDetails(user_id)
     try:
-        # Add the request and requested buses to the session and commit the changes
         session.add_all(requested_buses_list)
         session.commit()
         return True
     except Exception as e:
-        # Handle any errors that occurred during the database operation
         session.rollback()
-        print("Error creating requestedbusses:", str(e))
+        print("Error creating requested buses:", str(e))
         return False
-    
-if session.query(User).count() == 0:
-    create_user("default","default@gmail.com","v1")
+    finally:
+        session.close()
 
 def get_all_notes():
+    session = generate_session()
     notes = session.query(Note).all()
+    session.close()
     return notes
 
-
 def defcreate_note(message, starttime, endtime):
+    session = generate_session()
     note = Note(id=session.query(func.count(Note.id)).scalar() + 1, message=message, starttime=starttime, endtime=endtime)
     session.add(note)
     session.commit()
+    session.close()
 
 def get_note(note_id):
-    return session.query(Note).get(note_id)
-
+    session = generate_session()
+    note = session.query(Note).get(note_id)
+    session.close()
+    return note
 
 def defupdate_note(note_id, message=None, starttime=None, endtime=None):
+    session = generate_session()
     note = session.query(Note).get(note_id)
     if note is None:
+        session.close()
         return False
 
     if message:
@@ -190,28 +232,35 @@ def defupdate_note(note_id, message=None, starttime=None, endtime=None):
         note.endtime = endtime
 
     session.commit()
+    session.close()
     return True
 
-
 def defdelete_note(note_id):
+    session = generate_session()
     note = session.query(Note).get(note_id)
     if note is None:
+        session.close()
         return False
-
+    print(note.id)
     session.delete(note)
     session.commit()
+    session.close()
     return True
 
 def increment_used_count(note_id):
+    session = generate_session()
     note = session.query(Note).get(note_id)
     if note is None:
+        session.close()
         return False
 
     note.usedCount += 1
     session.commit()
+    session.close()
     return True
 
 def get_note_message():
+    session = generate_session()
     current_time = datetime.now().astimezone(timezone.utc)
 
     notes = get_all_notes()
@@ -232,33 +281,56 @@ def get_note_message():
                     note.status = "Ongoing"
                 increment_used_count(note.id)
                 session.commit()
+                session.close()
                 return note.message
-    
+
+    session.close()
     return None
 
 def requests_per_day_data():
+    session = generate_session()
     result = session.query(func.date(Request.timestamp).label('date'), func.count(Request.id).label('count')).group_by(func.date(Request.timestamp)).all()
-
     requests_data = []
     for row in result:
         request_date = row.date.strftime('%Y-%m-%d')
         requests_count = row.count
         requests_data.append({'date': request_date, 'count': requests_count})
-
+    session.close()
     return jsonify(requests_data)
 
+# def get_requests_by_hour_data():
+#     session = generate_session()
+#     result = session.query(
+#         func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00').label('hour'),
+#         func.count(Request.id).label('count')
+#     ).group_by('hour').order_by(func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00')).all()
+#     data = [{'hour': row.hour, 'count': row.count} for row in result]
+#     session.close()
+#     return jsonify(data)
+
 def get_requests_by_hour_data():
+    session = generate_session()
+
+    # Set the Singapore time zone offset to +8:00
+    sg_timezone = timezone(timedelta(hours=8))
+
+    # Calculate the datetime range for the last 24 hours in Singapore time
+    now = datetime.now()
+    start_time = now - timedelta(hours=24)
+    start_time_sg = start_time.replace(tzinfo=sg_timezone)
+
     result = session.query(
         func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00').label('hour'),
         func.count(Request.id).label('count')
-    ).group_by('hour').order_by(func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00')).all()
+    ).filter(Request.timestamp >= start_time_sg).group_by('hour').order_by('hour').all()
 
     data = [{'hour': row.hour, 'count': row.count} for row in result]
-
+    session.close()
     return jsonify(data)
 
 
 def get_statistics_data():
+    session = generate_session()
     # Total requests
     total_requests = session.query(func.count(Request.id)).scalar()
 
@@ -278,5 +350,14 @@ def get_statistics_data():
         'most_requested_stops': [{'bus_stop_code': stop_code, 'count': count} for stop_code, count in most_requested_stops],
         'bus_numbers_count': [{'bus_number': bus_number, 'count': count} for bus_number, count in bus_numbers_count]
     }
-
+    session.close()
     return jsonify(data)
+
+def get_requests_with_users():
+    session = generate_session()
+    requests_users = session.query(Request).\
+                    join(User).\
+                    options(joinedload(Request.user)).\
+                    order_by(desc(Request.timestamp)).\
+                    all()
+    return requests_users

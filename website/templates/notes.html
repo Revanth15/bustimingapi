@@ -15,6 +15,7 @@
                     <th>Start Date</th>
                     <th>End Date</th>
                     <th>Status</th>
+                    <th>Times Sent</th>
                     <th>Options</th>
                 </tr>
             </thead>
@@ -26,6 +27,7 @@
                     <td>{{ note.starttime }}</td>
                     <td>{{ note.endtime }}</td>
                     <td>{{ note.status }}</td>
+                    <td>{{ note.usedCount }}</td>
                     <td>
                         <button type="button" class="warning-btn-fixed" data-bs-toggle="modal"
                             data-bs-target="#myModal_{{ note.id }}">Edit
@@ -53,8 +55,8 @@
                                         </div>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" S class="light-btn" data-bs-dismiss="modal">Back</button>
-                                        <button id="editNote" class="blue-btn-25" data-bs-dismiss="modal">Edit Note</button>
+                                        <button type="button" class="light-btn" data-bs-dismiss="modal">Back</button>
+                                        <button id="editNote" class="blue-btn-25 editNote" data-bs-dismiss="modal">Edit Note</button>
                                     </div>
 
                                 </div>
@@ -75,8 +77,8 @@
                                         Delete notes?
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" S class="light-btn" data-bs-dismiss="modal">Back</button>
-                                        <button type="button" S class="danger-btn-fixed" data-bs-dismiss="modal" id="deletebtn">Delete</button>
+                                        <button type="button" class="light-btn" data-bs-dismiss="modal">Back</button>
+                                        <button type="button" class="danger-btn-fixed deletebtn" data-bs-dismiss="modal" id="deletebtn">Delete</button>
                                     </div>
                                 </div>
                             </div>
@@ -113,7 +115,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" S class="light-btn" data-bs-dismiss="modal">Back</button>
+                <button type="button" class="light-btn" data-bs-dismiss="modal">Back</button>
                 <button id="addNote" class="blue-btn-25">Add Note</button>
             </div>
         </div>
@@ -123,94 +125,96 @@
     $(document).ready(function () {
         const noteTable = document.getElementById('notes-table');
         let notetable = new simpleDatatables.DataTable(noteTable);
-    });
-
-    $("#addNote").click(function() {
-        // Retrieve input field values
-        var message = $("#add_Message").val();
-        var starttime = $("#add_Start").val();
-        var endtime = $("#add_End").val();
-
-        // Create note object
-        var noteData = {
-        message: message,
-        starttime: starttime,
-        endtime: endtime
-        };
-
-        // Send note data using AJAX
-        $.ajax({
-        url: "/admin/create_note",
-        type: "POST",
-        data: JSON.stringify(noteData),
-        contentType: "application/json",
-        success: function(response) {
-            // Handle success response
-            $('#addNoteModal').modal('hide');
-        },
-        error: function(error) {
-            // Handle error response
-            console.error("Error adding note:", error);
-        }
-        });
-    });
-
-    $("#editNote").on("click", function() {
-        // Get the note ID from the hidden input field
-        var noteId = $("#editId").val();
-        
-        // Get the updated values from the input fields
-        var message = $("#edit_Message").val();
-        var starttime = $("#edit_Start").val();
-        var endtime = $("#edit_End").val();
-        
-        // Create an object with the updated note data
-        var noteData = {
+    
+        $("#addNote").click(function() {
+            // Retrieve input field values
+            var message = $("#add_Message").val();
+            var starttime = $("#add_Start").val();
+            var endtime = $("#add_End").val();
+    
+            // Create note object
+            var noteData = {
             message: message,
             starttime: starttime,
             endtime: endtime
-        };
-        
-        // Send an AJAX POST request to update the note
-        $.ajax({
-            url: "/admin/update_note/" + noteId,
+            };
+    
+            // Send note data using AJAX
+            $.ajax({
+            url: "/admin/create_note",
             type: "POST",
-            contentType: "application/json",
             data: JSON.stringify(noteData),
+            contentType: "application/json",
             success: function(response) {
-            // Handle the success response
-            console.log("Note updated successfully!");
-            // Do something after the note is updated, such as refreshing the note list
+                // Handle success response
+                $('#addNoteModal').modal('hide');
+                location.reload();
             },
-            error: function(xhr, status, error) {
-            // Handle the error response
-            console.error("Failed to update note:", error);
+            error: function(error) {
+                // Handle error response
+                console.error("Error adding note:", error);
             }
+            });
+        });
+    
+        $(".editNote").click(function() {
+            // Find the closest modal container to the clicked edit button
+            var modalContainer = $(this).closest(".modal");
+            // Retrieve the note ID from the hidden input field within the modal container
+            var noteId = modalContainer.find("#editId").val();
+            // Retrieve the updated values from the input fields within the modal container
+            var message = modalContainer.find("#edit_Message").val();
+            var starttime = modalContainer.find("#edit_Start").val();
+            var endtime = modalContainer.find("#edit_End").val();
+    
+            // Create an object with the updated note data
+            var noteData = {
+                message: message,
+                starttime: starttime,
+                endtime: endtime
+            };
+    
+            // Send an AJAX POST request to update the note
+            $.ajax({
+                url: "/admin/update_note/" + noteId,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(noteData),
+                success: function(response) {
+                    // Handle the success response
+                    console.log("Note updated successfully!");
+                    location.reload();
+                    // Do something after the note is updated, such as refreshing the note list
+                },
+                error: function(xhr, status, error) {
+                    // Handle the error response
+                    console.error("Failed to update note:", error);
+                }
+            });
+        });
+    
+        $(document).on('click', '.deletebtn', function() {
+            // Retrieve the note ID from the hidden input field
+            var noteId = $(this).closest('.modal').find("#deleteId").val();
+
+            // Send an AJAX request to the backend to delete the note
+            $.ajax({
+                url: "/admin/delete_note/" + noteId,
+                type: "DELETE",
+                success: function(response) {
+                    // Note deleted successfully
+                    console.log("Note deleted successfully");
+                    location.reload();
+                },
+                error: function(error) {
+                    // Error occurred while deleting the note
+                    console.error("Failed to delete note", error);
+                    // Display an error message or handle the error
+                }
+            });
         });
     });
 
-    $("#deletebtn").click(function() {
-        // Retrieve the note ID from the hidden input field
-        var noteId = $("#deleteId").val();
-        
-        // Send an AJAX request to the backend to delete the note
-        $.ajax({
-        url: "/admin/delete_note/" + noteId,
-        type: "DELETE",
-        success: function(response) {
-            // Note deleted successfully
-            console.log("Note deleted successfully");
-        },
-        error: function(error) {
-            // Error occurred while deleting the note
-            console.error("Failed to delete note", error);
-            // Display an error message or handle the error
-        }
-        });
-    });
-
-    
-    
 </script>
 
 {% endblock %}

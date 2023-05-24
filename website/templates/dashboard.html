@@ -50,7 +50,7 @@
                 <div class="number">
                     <span id="customers">0</span>
                 </div>
-                <div class="desc">Customers</div>
+                <div class="desc">Requests</div>
             </div>
         </a>
     </div>
@@ -89,6 +89,33 @@
     <!-- <div class="card">
         <div><canvas id="requestsPerHour"></canvas></div>
     </div> -->
+</div>
+<div class="card mt-2" style="padding:10px">
+    <div class="card-header">
+        <h2>Requests</h2>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped" id="requests-table">
+            <thead>
+                <tr>
+                    <th>Request ID</th>
+                    <th>Bus Stop Code</th>
+                    <th>User</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                <tr>
+                    <td>{{ request.id }}</td>
+                    <td>{{ request.bus_stop_code }}</td>
+                    <td>{{ request.user.username }} (ID: {{ request.user.id }})</td>
+                    <td>{{ request.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
 

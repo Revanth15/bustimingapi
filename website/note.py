@@ -43,7 +43,7 @@ def update_note(id):
 @notes.route('/delete_note/<int:id>', methods=['DELETE'])
 def delete_note(id):
     success = defdelete_note(id)
-    
+    print(id)
     if success:
         return jsonify({"message": "Note deleted successfully"})
     else:

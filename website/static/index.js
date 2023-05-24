@@ -26,6 +26,11 @@
 //     );
 //   })();
 
+$(document).ready(function() {
+    const requestTable = document.getElementById('requests-table');
+    let requesttable = new simpleDatatables.DataTable(requestTable);
+})
+
 
 var getrequestperdaydata = $.get('/admin/requests_per_day_data')
 var ctxreqPerDay = document.getElementById("requestsPerDay").getContext('2d');

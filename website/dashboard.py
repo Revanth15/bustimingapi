@@ -7,15 +7,19 @@ from sqlalchemy.ext.declarative import declarative_base
 import os
 from sqlalchemy.orm import sessionmaker
 
-from website.database import get_requests_by_hour_data, get_statistics_data, requests_per_day_data
+from website.database import get_requests_by_hour_data, get_statistics_data, requests_per_day_data, get_requests_with_users
 
 dashboard = Blueprint('dashboard', __name__)
 
 @dashboard.route('/', methods=['GET', 'POST'])
 # @login_required
 def dashboardpage():
-
-    return render_template("dashboard.html")
+    requests = get_requests_with_users()
+    # for request in requests:
+    #     print("Request ID:", request.id)
+    #     print("User:", request.user.username)
+    #     print("Timestamp:", request.timestamp)
+    return render_template("dashboard.html", requests = requests)
 
 @dashboard.route('/requests_per_day_data', methods=['GET'])
 def requests_per_day():

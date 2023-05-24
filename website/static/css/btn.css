@@ -114,7 +114,7 @@
     box-shadow: 0 0 0 2px white, 0 0 0 3px #fdd626;
 }
 .warning-btn-fixed {
-    width: 43%;
+    width: 37.5%;
     background: #fdd626;
     font-weight: bold;
     color: white;
@@ -149,7 +149,7 @@
 }
 
 .danger-btn-fixed {
-    width: 43%;
+    width: 37.5%;
     background: #fd3d3d;
     font-weight: bold;
     color: white;
