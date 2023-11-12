@@ -7,7 +7,6 @@ from sqlalchemy.ext.declarative import declarative_base
 import os
 from sqlalchemy.orm import sessionmaker
 from website.database import get_all_users, get_requests_by_hour_data, get_statistics_data, requests_per_day_data, get_requests_with_users, update_user_details
-from website.schemas import UserDetailsUpdate
 
 dashboard = Blueprint('dashboard', __name__)
 
