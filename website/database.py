@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from http.client import HTTPException
 from dotenv import load_dotenv
 from flask import Blueprint, jsonify
-from sqlalchemy import DateTime, ForeignKey, QueuePool, create_engine, Column, Integer, String, Float, desc, func, event, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, QueuePool, Table, create_engine, Column, Integer, String, Float, desc, func, event, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import os
@@ -21,8 +22,8 @@ def engine_creation():
             'connect_timeout': 120
         },
         poolclass=QueuePool,
-        pool_size=100,  # Adjust the pool size as per your requirements
-        pool_recycle=600,  # Recycle connections after 10min (adjust as needed)
+        pool_size=100,  
+        pool_recycle=600,  
         pool_pre_ping=True
     )
     return engine
@@ -51,8 +52,10 @@ class User(Base):
     last_used = Column(DateTime)
     days_active = Column(Integer, default=0)
     shortcut_version = Column(String(10))
+    ban = Column(Boolean, default=False)
+    notesBan = Column(Boolean, default=False)
     requests = relationship('Request', back_populates='user')
-
+    
 class Request(Base):
     __tablename__ = 'requests'
 
@@ -131,6 +134,12 @@ def get_userByNameandEmail(name,email):
     session.close()
     return user
 
+def get_all_users():
+    session = generate_session()
+    users = session.query(User).all()
+    session.close()
+    return users
+
 def create_user(name, email, version):
     session = generate_session()
     try:
@@ -153,21 +162,46 @@ if session.query(User).count() == 0:
 
 session.close()
 
-def update_userDetails(id):
+def update_userDetails(id,sh_version):
     session = generate_session()
     user = get_userById(id)
-    dt = datetime.now(timezone.utc).date()
-    if user.last_used:
-        if dt > user.last_used.date():
+    try:
+        user = session.merge(user)
+        dt = datetime.now(timezone.utc).date()
+        if user.last_used:
+            if dt > user.last_used.date():
+                user.days_active += 1
+        else:
             user.days_active += 1
-    else:
-        user.days_active += 1
-    user.num_requests += 1
-    user.last_used = datetime.utcnow() + timedelta(hours=8)
-    session.commit()
-    session.close()
+        user.num_requests += 1
+        user.last_used = datetime.utcnow() + timedelta(hours=8)
+        user.shortcut_version = sh_version
+        session.commit()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        session.rollback()
 
-def create_request(bus_stop_code, options, user_id, requested_buses):
+    finally:
+        session.close()
+
+def update_user_details(user_id: int, update_data: dict):
+    session = generate_session()
+    user = get_userById(user_id)
+    try:
+        user = session.merge(user)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        user.ban = update_data.get("ban")
+        user.notesBan = update_data.get("notesban")
+        session.commit()
+        return {"message": "User details updated successfully"}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating user details: {e}")
+    finally:
+        session.close()
+
+def create_request(bus_stop_code, options, user_id, requested_buses, sh_version):
     session = generate_session()
     try:
         request = Request(id=session.query(func.count(Request.id)).scalar() + 1, bus_stop_code=bus_stop_code, options=options, timestamp=datetime.utcnow() + timedelta(hours=8), user_id=user_id)
@@ -186,7 +220,7 @@ def create_request(bus_stop_code, options, user_id, requested_buses):
         requested_bus = RequestedBuses(id=session.query(func.count(RequestedBuses.id)).scalar() + val, bus_number=bus, request_id=request.id)
         requested_buses_list.append(requested_bus)
         val += 1
-    update_userDetails(user_id)
+    update_userDetails(user_id,sh_version)
     try:
         session.add_all(requested_buses_list)
         session.commit()
@@ -259,30 +293,29 @@ def increment_used_count(note_id):
     session.close()
     return True
 
-def get_note_message():
+def get_note_message(user):
     session = generate_session()
-    current_time = datetime.now().astimezone(timezone.utc)
+    current_time = datetime.now().astimezone(timezone(timedelta(hours=8)))
 
     notes = get_all_notes()
-    for note in notes:
-        note_start = note.starttime.astimezone(timezone.utc)
-        note_end = note.endtime.astimezone(timezone.utc)
-        print(note.starttime, current_time, note.endtime)
-        print(note_start, current_time, note_end)
-        if note_start <= current_time <= note_end:
-            print("true")
-            if note.status == "Inactive" or note.status == "Ongoing":
-                print("true1")
-                # if current_time > note.endtime:
-                #     print("true2")
-                #     note.status = "Finished"
-                if note.status == "Inactive":
-                    print("true3")
-                    note.status = "Ongoing"
-                increment_used_count(note.id)
-                session.commit()
-                session.close()
-                return note.message
+    if(user.notesBan == False):
+        for note in notes:
+            note_start = note.starttime.astimezone(timezone(timedelta(hours=8)))
+            note_end = note.endtime.astimezone(timezone(timedelta(hours=8)))
+            if note_start <= current_time <= note_end:
+                print("true")
+                if note.status == "Inactive" or note.status == "Ongoing":
+                    print("true1")
+                    # if current_time > note.endtime:
+                    #     print("true2")
+                    #     note.status = "Finished"
+                    if note.status == "Inactive":
+                        print("true3")
+                        note.status = "Ongoing"
+                    increment_used_count(note.id)
+                    session.commit()
+                    session.close()
+                    return note.message
 
     session.close()
     return None
@@ -298,23 +331,11 @@ def requests_per_day_data():
     session.close()
     return jsonify(requests_data)
 
-# def get_requests_by_hour_data():
-#     session = generate_session()
-#     result = session.query(
-#         func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00').label('hour'),
-#         func.count(Request.id).label('count')
-#     ).group_by('hour').order_by(func.date_format(Request.timestamp, '%Y-%m-%d %H:00:00')).all()
-#     data = [{'hour': row.hour, 'count': row.count} for row in result]
-#     session.close()
-#     return jsonify(data)
-
 def get_requests_by_hour_data():
     session = generate_session()
 
-    # Set the Singapore time zone offset to +8:00
     sg_timezone = timezone(timedelta(hours=8))
 
-    # Calculate the datetime range for the last 24 hours in Singapore time
     now = datetime.now()
     start_time = now - timedelta(hours=24)
     start_time_sg = start_time.replace(tzinfo=sg_timezone)

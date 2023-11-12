@@ -47,7 +47,7 @@ def get_bustiming(busstopcode,busno,options):
                 "options": "Seats Available | WheelChair"
             }
         ],
-        "stopName": "Yishun Stn",
+        "stopName": "Yishun Stn (test)",
         "note": ""
     }
     data = {}
@@ -82,7 +82,7 @@ def get_bustiming(busstopcode,busno,options):
     headers = {
     'AccountKey': ACCOUNT_KEY
     }
-    create_request(busstopcode,options,user.id,buslist)
+    create_request(busstopcode,options,user.id,buslist,request.headers.get('Version'))
     response = requests.request("GET", url, headers=headers)
     response = response.json()
     services = response['Services']
@@ -91,7 +91,7 @@ def get_bustiming(busstopcode,busno,options):
             list.append(getArrivingTime(i, optionsList))
         data['Services'] = list
         data['stopName'] = get_busstop(str(busstopcode)).description
-        note = get_note_message()
+        note = get_note_message(user)
         if note is not None:
             data['note'] = note
         else:

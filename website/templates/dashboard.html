@@ -9,9 +9,9 @@
             </div>
             <div class="details">
                 <div class="number">
-                    <span id="sales">$0</span>
+                    <span id="sales">0</span>
                 </div>
-                <div class="desc">Total Sales</div>
+                <div class="desc"></div>
             </div>
         </a>
     </div>
@@ -22,29 +22,29 @@
             </div>
             <div class="details">
                 <div class="number">
-                    <span id="revenue">$0</span>
+                    <span id="revenue">0</span>
                 </div>
-                <div class="desc">Total Revenue</div>
+                <div class="desc"></div>
             </div>
         </a>
     </div>
     <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
         <a class="dashboard-stat blue" href="#">
             <div class="visual">
-                <i class='bx bx-package'></i>
+                <i class='bx bxs-user'></i>
             </div>
             <div class="details">
                 <div class="number">
                     <span id="orders">0</span>
                 </div>
-                <div class="desc">Total Orders</div>
+                <div class="desc"></div>
             </div>
         </a>
     </div>
     <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12">
         <a class="dashboard-stat purple" href="#">
             <div class="visual">
-                <i class='bx bxs-user'></i>
+                <i class='bx bx-trending-up'></i>
             </div>
             <div class="details">
                 <div class="number">
@@ -116,7 +116,59 @@
             </tbody>
         </table>
     </div>
+    <div class="card mt-2" style="padding:10px">
+        <div class="card-header">
+            <h2>Users</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped" id="users-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Num Requests</th>
+                        <th>Last Used</th>
+                        <th>Days Active</th>
+                        <th>Shortcut Version</th>
+                        <th>Ban</th>
+                        <th>Notes Ban</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.num_requests }}</td>
+                            <td>{{ user.last_used }}</td>
+                            <td>{{ user.days_active }}</td>
+                            <td>{{ user.shortcut_version }}</td>
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input ban-checkbox"
+                                    data-user-id="{{ user.id }}"
+                                    {% if user.ban %}checked{% endif %}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="checkbox"
+                                    class="form-check-input requestban-checkbox"
+                                    data-user-id="{{ user.id }}"
+                                    {% if user.notesBan %}checked{% endif %}
+                                />
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block javascripts %}

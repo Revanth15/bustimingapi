@@ -158,58 +158,44 @@
         });
     
         $(".editNote").click(function() {
-            // Find the closest modal container to the clicked edit button
             var modalContainer = $(this).closest(".modal");
-            // Retrieve the note ID from the hidden input field within the modal container
             var noteId = modalContainer.find("#editId").val();
-            // Retrieve the updated values from the input fields within the modal container
             var message = modalContainer.find("#edit_Message").val();
             var starttime = modalContainer.find("#edit_Start").val();
             var endtime = modalContainer.find("#edit_End").val();
     
-            // Create an object with the updated note data
             var noteData = {
                 message: message,
                 starttime: starttime,
                 endtime: endtime
             };
     
-            // Send an AJAX POST request to update the note
             $.ajax({
                 url: "/admin/update_note/" + noteId,
                 type: "POST",
                 contentType: "application/json",
                 data: JSON.stringify(noteData),
                 success: function(response) {
-                    // Handle the success response
                     console.log("Note updated successfully!");
                     location.reload();
-                    // Do something after the note is updated, such as refreshing the note list
                 },
                 error: function(xhr, status, error) {
-                    // Handle the error response
                     console.error("Failed to update note:", error);
                 }
             });
         });
     
         $(document).on('click', '.deletebtn', function() {
-            // Retrieve the note ID from the hidden input field
             var noteId = $(this).closest('.modal').find("#deleteId").val();
-
-            // Send an AJAX request to the backend to delete the note
             $.ajax({
                 url: "/admin/delete_note/" + noteId,
                 type: "DELETE",
                 success: function(response) {
-                    // Note deleted successfully
                     console.log("Note deleted successfully");
                     location.reload();
                 },
                 error: function(error) {
-                    // Error occurred while deleting the note
                     console.error("Failed to delete note", error);
-                    // Display an error message or handle the error
                 }
             });
         });

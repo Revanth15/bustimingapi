@@ -27,8 +27,34 @@
 //   })();
 
 $(document).ready(function() {
-    const requestTable = document.getElementById('requests-table');
-    let requesttable = new simpleDatatables.DataTable(requestTable);
+    const requestsTable = document.getElementById('requests-table');
+    let requestsTableInstance = new simpleDatatables.DataTable(requestsTable);
+
+    $(".ban-checkbox, .requestban-checkbox").change(function () {
+        var userId = $(this).data("user-id");
+        var isBan = $(this).hasClass("ban-checkbox");
+
+        var updateData = {
+            ban: isBan ? this.checked : $(".ban-checkbox[data-user-id='" + userId + "']").prop("checked"),
+            notesban: !isBan ? this.checked : $(".requestban-checkbox[data-user-id='" + userId + "']").prop("checked")
+        };
+
+        updateData.ban = updateData.ban === true || updateData.ban === "true";
+        updateData.notesban = updateData.notesban === true || updateData.notesban === "true";
+
+        $.ajax({
+            url: "/admin/update_user/" + userId,
+            type: "PUT",
+            contentType: "application/json",
+            data: JSON.stringify(updateData),
+            success: function(response) {
+                alert(response.message);
+            },
+            error: function(xhr, status, error) {
+                console.error("Failed to update user details:", error);
+            }
+        });
+    });
 })
 
 
@@ -88,16 +114,31 @@ getrequestperdaydata.done(function (data) {
 
 })
 
+function fillMissingHours(data) {
+    var counts = data.map(entry => entry.count);
+    var hours = data.map(entry => entry.hour);
+
+    var allHours = Array.from({ length: 24 }, (_, i) => i)
+        .map(hour => hour.toString().padStart(2, '0') + ':00:00');
+
+    var resultCounts = [];
+    var resultHours = [];
+    allHours.forEach(function (hour) {
+        var index = hours.findIndex(entryHour => entryHour.endsWith(hour));
+        resultCounts.push(index !== -1 ? counts[index] : 0);
+        resultHours.push(hour);
+    });
+    return { counts: resultCounts, hours: resultHours };
+}
+
 function hourschart(){
     var getrequestperhourdata = $.get('/admin/requests_per_hour_data')
     var ctxreqPerHour = document.getElementById("requestsPerHour").getContext('2d');
-    var count = []
-    var hour = []
     getrequestperhourdata.done(function (data) {
-        data.forEach(element => {
-            count.push(element["count"])
-            hour.push(element["hour"])
-        });
+        var processedData = fillMissingHours(data);
+        var count = processedData["counts"]
+        var hour = processedData["hours"]
+
         window.myreqhourChart = new Chart(ctxreqPerHour, {
             type: 'line',
             data: {
@@ -119,29 +160,37 @@ function hourschart(){
                 }],
             },
             options : {
-				responsive: true, 
-				maintainAspectRatio: false,
-				legend: {
-					position: 'bottom',
-					labels : {
-						padding: 10,
-						fontColor: '#1d7af3',
-					}
-				},
-				tooltips: {
-					bodySpacing: 4,
-					mode:"nearest",
-					intersect: 0,
-					position:"nearest",
-					xPadding:10,
-					yPadding:10,
-					caretPadding:10
-				},
-				layout:{
-					padding:{left:15,right:15,top:15,bottom:15}
-				}
-			}
-        });
+                responsive: true, 
+                maintainAspectRatio: false,
+                legend: {
+                    position: 'bottom',
+                    labels : {
+                        padding: 10,
+                        fontColor: '#1d7af3',
+                    }
+                },
+                tooltips: {
+                    bodySpacing: 4,
+                    mode:"nearest",
+                    intersect: 0,
+                    position:"nearest",
+                    xPadding:10,
+                    yPadding:10,
+                    caretPadding:10
+                },
+                layout:{
+                    padding:{left:15,right:15,top:15,bottom:15}
+                },
+                scales: {
+                    y: {
+                        min: 0,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });        
     
     })
 }
